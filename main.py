@@ -1,19 +1,29 @@
 import os
+
+from databricks_writer import DatabricksWriter
+from telegram_notifier import TelegramNotifier
+
 from scrapers.amazon_in import AmazonIndiaScraper
 from scrapers.hp_in import HPIndiaScraper
 from scrapers.dell_in import DellIndiaScraper
 from scrapers.lenovo_in import LenovoIndiaScraper
 from scrapers.asus_in import ASUSIndiaScraper
-from databricks_writer import DatabricksWriter
-from telegram_notifier import TelegramNotifier
+from scrapers.flipkart_in import FlipkartScraper
+from scrapers.croma_in import CromaScraper
+from scrapers.vijaysales_in import VijaysSalesScraper
+from scrapers.poorvika_in import PoorvikaScraper
 
 def main():
     scrapers = [
         AmazonIndiaScraper(),
+        FlipkartScraper(),
         HPIndiaScraper(),
         DellIndiaScraper(),
         LenovoIndiaScraper(),
         ASUSIndiaScraper(),
+        CromaScraper(),
+        VijaysSalesScraper(),
+        PoorvikaScraper(),
     ]
 
     all_laptops = []
