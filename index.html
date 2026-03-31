@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GameTrack India — Laptop Price Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --bg2: #0d1117;
+    --bg3: #111820;
+    --card: #0f1923;
+    --border: #1e2d3d;
+    --cyan: #00e5ff;
+    --green: #00ff88;
+    --orange: #ff6b35;
+    --red: #ff2d55;
+    --yellow: #ffd60a;
+    --muted: #4a6080;
+    --text: #c8d8e8;
+    --text2: #7a9bb5;
+    --font-head: 'Exo 2', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui: 'Rajdhani', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCANLINE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,229,255,.015) 2px, rgba(0,229,255,.015) 4px);
+    pointer-events: none; z-index: 999;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(180deg, #0a1520 0%, var(--bg2) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 12px;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--cyan);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #000; font-weight: 900;
+    animation: pulse-hex 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-hex {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(0,229,255,0); }
+  }
+
+  .logo-text {
+    font-family: var(--font-head);
+    font-weight: 800; font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  .logo-text span { color: var(--cyan); }
+
+  .header-status {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text2);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.2; }
+  }
+
+  /* ── STAT BAR ── */
+  .stat-bar {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .stat-item {
+    padding: 10px 12px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .stat-item:last-child { border-right: none; }
+
+  .stat-val {
+    font-family: var(--font-mono);
+    font-size: 18px; font-weight: 600;
+    color: var(--cyan);
+    display: block;
+  }
+
+  .stat-val.green { color: var(--green); }
+  .stat-val.orange { color: var(--orange); }
+
+  .stat-label {
+    font-size: 10px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-top: 1px; display: block;
+  }
+
+  /* ── FILTER TABS ── */
+  .filter-section {
+    padding: 12px 16px 0;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .filter-label {
+    font-size: 10px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .brand-tabs {
+    display: flex; gap: 6px; overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: none;
+  }
+
+  .brand-tabs::-webkit-scrollbar { display: none; }
+
+  .brand-tab {
+    flex-shrink: 0;
+    padding: 5px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: var(--font-ui); font-weight: 600;
+    font-size: 13px; color: var(--text2);
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .brand-tab::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px; background: var(--cyan);
+    transform: scaleX(0);
+    transition: transform .2s;
+  }
+
+  .brand-tab.active {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    background: rgba(0,229,255,.06);
+  }
+
+  .brand-tab.active::after { transform: scaleX(1); }
+
+  /* Brand colors */
+  .brand-tab[data-brand="ASUS"].active { color: #00b4d8; border-color: #00b4d8; background: rgba(0,180,216,.06); }
+  .brand-tab[data-brand="ASUS"].active::after { background: #00b4d8; }
+  .brand-tab[data-brand="HP"].active { color: #0096ff; border-color: #0096ff; background: rgba(0,150,255,.06); }
+  .brand-tab[data-brand="HP"].active::after { background: #0096ff; }
+  .brand-tab[data-brand="Dell"].active { color: #007ce0; border-color: #007ce0; background: rgba(0,124,224,.06); }
+  .brand-tab[data-brand="Dell"].active::after { background: #007ce0; }
+  .brand-tab[data-brand="Lenovo"].active { color: #e8512a; border-color: #e8512a; background: rgba(232,81,42,.06); }
+  .brand-tab[data-brand="Lenovo"].active::after { background: #e8512a; }
+
+  /* ── MAIN TABS ── */
+  .main-tabs {
+    display: flex;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .main-tab {
+    flex: 1; padding: 12px 8px;
+    text-align: center;
+    font-family: var(--font-ui); font-weight: 600;
+    font-size: 13px; color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .main-tab.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+    background: rgba(0,229,255,.04);
+  }
+
+  /* ── CONTENT AREA ── */
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex; align-items: center;
+    padding: 14px 16px 8px;
+    gap: 10px;
+  }
+
+  .section-title {
+    font-family: var(--font-head);
+    font-weight: 800; font-size: 14px;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--text2);
+  }
+
+  .section-count {
+    background: rgba(0,229,255,.1);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 11px; padding: 1px 7px;
+    border: 1px solid rgba(0,229,255,.25);
+    border-radius: 2px;
+  }
+
+  /* ── CARD GRID ── */
+  .cards-grid {
+    padding: 0 12px 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .laptop-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    transition: border-color .2s, transform .15s;
+    animation: fadeSlideIn .3s ease both;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .laptop-card:active { transform: scale(0.99); }
+
+  .laptop-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--brand-color, var(--cyan));
+    opacity: 0.6;
+  }
+
+  .laptop-card.deal::before { background: var(--green); opacity: 1; }
+
+  .card-inner { padding: 12px 14px; }
+
+  /* Brand badge + series */
+  .card-top {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 8px;
+  }
+
+  .card-brand-row {
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .brand-badge {
+    font-family: var(--font-mono); font-size: 9px;
+    font-weight: 700; padding: 2px 7px;
+    border-radius: 2px; text-transform: uppercase;
+    letter-spacing: 1px;
+    background: var(--brand-color, var(--cyan));
+    color: #000;
+  }
+
+  .series-tag {
+    font-family: var(--font-ui); font-size: 11px;
+    color: var(--text2); font-weight: 500;
+  }
+
+  .deal-badge {
+    font-family: var(--font-mono); font-size: 9px;
+    padding: 2px 8px; border-radius: 2px;
+    background: rgba(0,255,136,.15);
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,.3);
+    letter-spacing: 0.5px;
+    animation: flash-deal 2s ease-in-out infinite;
+  }
+
+  @keyframes flash-deal {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Model name */
+  .card-name {
+    font-family: var(--font-head);
+    font-weight: 700; font-size: 14px;
+    line-height: 1.2; margin-bottom: 8px;
+    color: #e0eaf5;
+  }
+
+  /* Specs chips */
+  .spec-chips {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .spec-chip {
+    font-family: var(--font-mono); font-size: 10px;
+    padding: 2px 7px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    border-radius: 2px; color: var(--text2);
+  }
+
+  /* Price row */
+  .card-price-row {
+    display: flex; align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .price-block {}
+
+  .price-current {
+    font-family: var(--font-mono); font-size: 22px;
+    color: var(--cyan); font-weight: 700;
+    line-height: 1;
+  }
+
+  .price-was {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text2); text-decoration: line-through;
+    margin-top: 2px;
+  }
+
+  .price-drop {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--green); margin-top: 2px;
+  }
+
+  /* Sparkline */
+  .sparkline-wrap {
+    flex-shrink: 0; width: 80px; height: 36px;
+  }
+
+  .sparkline-wrap svg { width: 100%; height: 100%; }
+
+  /* Source + time */
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,.04);
+  }
+
+  .source-link {
+    font-family: var(--font-mono); font-size: 9px;
+    color: var(--text2); text-decoration: none;
+    display: flex; align-items: center; gap: 4px;
+    transition: color .2s;
+  }
+
+  .source-link:hover { color: var(--cyan); }
+
+  .source-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--orange);
+    display: inline-block;
+  }
+
+  .source-dot.amazon { background: var(--orange); }
+  .source-dot.official { background: var(--green); }
+
+  .last-seen {
+    font-family: var(--font-mono); font-size: 9px;
+    color: var(--muted);
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center; padding: 48px 24px;
+  }
+
+  .empty-icon {
+    font-size: 48px; margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .empty-title {
+    font-family: var(--font-head); font-weight: 800;
+    font-size: 18px; color: var(--text2);
+    margin-bottom: 8px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .empty-sub {
+    font-size: 13px; color: var(--muted); line-height: 1.5;
+    max-width: 260px; margin: 0 auto 20px;
+  }
+
+  .cta-button {
+    display: inline-block;
+    padding: 10px 24px;
+    background: transparent;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: var(--font-ui); font-weight: 700;
+    font-size: 13px; letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 4px; cursor: pointer;
+    transition: all .2s;
+    position: relative; overflow: hidden;
+  }
+
+  .cta-button::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--cyan); opacity: 0;
+    transition: opacity .2s;
+  }
+
+  .cta-button:hover::before { opacity: .08; }
+
+  /* ── ALERTS TAB ── */
+  .alerts-header {
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .alerts-title {
+    font-family: var(--font-head); font-weight: 800;
+    font-size: 15px; text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .add-alert-btn {
+    padding: 6px 14px;
+    background: rgba(0,229,255,.1);
+    border: 1px solid rgba(0,229,255,.3);
+    color: var(--cyan);
+    font-family: var(--font-ui); font-weight: 600;
+    font-size: 12px; border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .alert-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    animation: fadeSlideIn .3s ease both;
+  }
+
+  .alert-icon { font-size: 20px; flex-shrink: 0; }
+
+  .alert-info { flex: 1; }
+
+  .alert-name {
+    font-family: var(--font-ui); font-weight: 600;
+    font-size: 13px; color: var(--text);
+  }
+
+  .alert-detail {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text2); margin-top: 2px;
+  }
+
+  .alert-toggle {
+    width: 38px; height: 20px;
+    background: var(--border);
+    border-radius: 10px;
+    position: relative; cursor: pointer;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+
+  .alert-toggle.on { background: rgba(0,255,136,.3); border: 1px solid var(--green); }
+
+  .alert-toggle::after {
+    content: '';
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: var(--muted);
+    border-radius: 50%; transition: all .2s;
+  }
+
+  .alert-toggle.on::after {
+    left: 18px; background: var(--green);
+  }
+
+  /* ── INFO PANEL (setup steps) ── */
+  .info-panel {
+    margin: 12px 16px;
+    background: rgba(0,229,255,.04);
+    border: 1px solid rgba(0,229,255,.15);
+    border-radius: 6px;
+    padding: 14px;
+  }
+
+  .info-panel-title {
+    font-family: var(--font-head); font-weight: 700;
+    font-size: 13px; color: var(--cyan);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .step-list { list-style: none; }
+
+  .step-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    font-size: 12px; color: var(--text2);
+    line-height: 1.4;
+  }
+
+  .step-item:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--cyan); flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-done { color: var(--green); text-decoration: line-through; opacity: .7; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.8);
+    z-index: 200;
+    display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1; pointer-events: all;
+  }
+
+  .modal {
+    width: 100%;
+    background: var(--bg3);
+    border-top: 1px solid var(--border);
+    border-radius: 14px 14px 0 0;
+    padding: 20px 16px 32px;
+    transform: translateY(100%);
+    transition: transform .3s ease;
+  }
+
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-handle {
+    width: 36px; height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  .modal-title {
+    font-family: var(--font-head); font-weight: 800;
+    font-size: 18px; margin-bottom: 4px;
+  }
+
+  .modal-brand-series {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text2); margin-bottom: 16px;
+  }
+
+  .modal-price-big {
+    font-family: var(--font-mono); font-size: 32px;
+    color: var(--cyan); margin-bottom: 16px;
+  }
+
+  .history-table { width: 100%; border-collapse: collapse; }
+  .history-table th {
+    font-family: var(--font-mono); font-size: 9px;
+    color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .history-table td {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--text); padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .history-table td.drop { color: var(--green); }
+  .history-table td.rise { color: var(--red); }
+
+  .close-modal {
+    width: 100%; margin-top: 20px;
+    padding: 12px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-family: var(--font-ui); font-weight: 600;
+    font-size: 14px; border-radius: 4px;
+    cursor: pointer;
+  }
+
+  /* ── TICKER ── */
+  .ticker-wrap {
+    background: rgba(0,229,255,.05);
+    border-bottom: 1px solid rgba(0,229,255,.1);
+    overflow: hidden; height: 28px;
+    display: flex; align-items: center;
+  }
+
+  .ticker-inner {
+    display: flex; gap: 40px;
+    animation: ticker-scroll 20s linear infinite;
+    white-space: nowrap;
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text2);
+  }
+
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .ticker-item { flex-shrink: 0; }
+  .ticker-item .up { color: var(--green); }
+  .ticker-item .down { color: var(--red); }
+
+  @media (min-width: 600px) {
+    .cards-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">GT</div>
+    <div class="logo-text">Game<span>Track</span></div>
+  </div>
+  <div class="header-status">
+    <div class="status-dot"></div>
+    <span id="last-updated">WAITING FOR DATA</span>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-inner">
+    <span class="ticker-item">ASUS TUF · <span class="up">Amazon.in</span></span>
+    <span class="ticker-item">Lenovo LOQ · <span class="up">Lenovo India</span></span>
+    <span class="ticker-item">HP Victus · <span class="down">HP India</span></span>
+    <span class="ticker-item">Dell G15 · <span class="up">Dell India</span></span>
+    <span class="ticker-item">ROG Strix · <span class="up">ASUS India</span></span>
+    <span class="ticker-item">HP Omen · <span class="up">Amazon.in</span></span>
+    <span class="ticker-item">Legion 5 · <span class="down">Amazon.in</span></span>
+    <span class="ticker-item">Alienware m16 · <span class="up">Dell India</span></span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item">ASUS TUF · <span class="up">Amazon.in</span></span>
+    <span class="ticker-item">Lenovo LOQ · <span class="up">Lenovo India</span></span>
+    <span class="ticker-item">HP Victus · <span class="down">HP India</span></span>
+    <span class="ticker-item">Dell G15 · <span class="up">Dell India</span></span>
+    <span class="ticker-item">ROG Strix · <span class="up">ASUS India</span></span>
+    <span class="ticker-item">HP Omen · <span class="up">Amazon.in</span></span>
+    <span class="ticker-item">Legion 5 · <span class="down">Amazon.in</span></span>
+    <span class="ticker-item">Alienware m16 · <span class="up">Dell India</span></span>
+  </div>
+</div>
+
+<!-- STAT BAR -->
+<div class="stat-bar">
+  <div class="stat-item">
+    <span class="stat-val" id="stat-tracked">—</span>
+    <span class="stat-label">Tracked</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-val green" id="stat-drops">—</span>
+    <span class="stat-label">Price Drops</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-val orange" id="stat-alerts">0</span>
+    <span class="stat-label">Alerts Set</span>
+  </div>
+</div>
+
+<!-- MAIN TABS -->
+<div class="main-tabs">
+  <div class="main-tab active" onclick="switchTab('prices')">📊 Prices</div>
+  <div class="main-tab" onclick="switchTab('deals')">🔥 Deals</div>
+  <div class="main-tab" onclick="switchTab('alerts')">🔔 Alerts</div>
+  <div class="main-tab" onclick="switchTab('setup')">⚙️ Setup</div>
+</div>
+
+<!-- ══════════ PRICES TAB ══════════ -->
+<div class="tab-pane active" id="tab-prices">
+
+  <!-- Brand filter -->
+  <div class="filter-section">
+    <div class="filter-label">Filter by Brand</div>
+    <div class="brand-tabs">
+      <div class="brand-tab active" data-brand="ALL" onclick="filterBrand(this)">All</div>
+      <div class="brand-tab" data-brand="ASUS" onclick="filterBrand(this)">ASUS</div>
+      <div class="brand-tab" data-brand="HP" onclick="filterBrand(this)">HP</div>
+      <div class="brand-tab" data-brand="Dell" onclick="filterBrand(this)">Dell</div>
+      <div class="brand-tab" data-brand="Lenovo" onclick="filterBrand(this)">Lenovo</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">All Laptops</div>
+    <div class="section-count" id="card-count">0</div>
+  </div>
+
+  <div class="cards-grid" id="cards-container">
+    <!-- Filled by JS -->
+  </div>
+
+  <div id="empty-prices" class="empty-state">
+    <div class="empty-icon">📡</div>
+    <div class="empty-title">Awaiting First Scan</div>
+    <div class="empty-sub">Price data will appear here once your GitHub Actions scraper runs for the first time.</div>
+    <button class="cta-button" onclick="switchTab('setup')">View Setup Steps</button>
+  </div>
+
+</div>
+
+<!-- ══════════ DEALS TAB ══════════ -->
+<div class="tab-pane" id="tab-deals">
+  <div class="empty-state">
+    <div class="empty-icon">🔥</div>
+    <div class="empty-title">No Deals Yet</div>
+    <div class="empty-sub">Price drops will show here automatically once the tracker has been running for at least 24 hours to establish a baseline.</div>
+  </div>
+</div>
+
+<!-- ══════════ ALERTS TAB ══════════ -->
+<div class="tab-pane" id="tab-alerts">
+  <div class="alerts-header">
+    <div class="alerts-title">🔔 My Alerts</div>
+    <button class="add-alert-btn" onclick="showAddAlert()">+ New Alert</button>
+  </div>
+
+  <div id="alerts-list">
+    <!-- Demo alert rows -->
+    <div class="alert-row">
+      <div class="alert-icon">🤖</div>
+      <div class="alert-info">
+        <div class="alert-name">Telegram Bot</div>
+        <div class="alert-detail">ALL BRANDS · Any price drop</div>
+      </div>
+      <div class="alert-toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="alert-row">
+      <div class="alert-icon">💰</div>
+      <div class="alert-info">
+        <div class="alert-name">Budget Alert</div>
+        <div class="alert-detail">Any laptop · below ₹70,000</div>
+      </div>
+      <div class="alert-toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+  </div>
+
+  <div style="padding: 24px 16px 0;">
+    <div style="font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-align:center;">
+      Telegram alerts are sent when price drops are detected.<br>Configure thresholds in your GitHub Secrets.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SETUP TAB ══════════ -->
+<div class="tab-pane" id="tab-setup">
+
+  <div class="info-panel">
+    <div class="info-panel-title">
+      <span>⚡</span> GitHub Actions Setup
+    </div>
+    <ul class="step-list">
+      <li class="step-item">
+        <span class="step-num">01</span>
+        <span>Create a GitHub repo named <strong>gaming-laptop-tracker</strong> and enable GitHub Pages (branch: main, folder: root)</span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">02</span>
+        <span>Add this <code>index.html</code> to the root of the repo</span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">03</span>
+        <span>Add your scraper Python files under <code>scrapers/</code> folder</span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">04</span>
+        <span>Add <code>.github/workflows/scrape.yml</code> with hourly cron schedule</span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">05</span>
+        <span>Add GitHub Secrets: <code>DATABRICKS_HOST</code>, <code>DATABRICKS_TOKEN</code>, <code>TELEGRAM_TOKEN</code>, <code>TELEGRAM_CHAT_ID</code></span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">06</span>
+        <span>Trigger Actions manually once to verify scraper runs correctly</span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">07</span>
+        <span>Dashboard auto-refreshes every hour via Actions — prices appear here automatically</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="info-panel" style="border-color: rgba(0,255,136,.15); background: rgba(0,255,136,.04);">
+    <div class="info-panel-title" style="color: var(--green);">
+      <span>📡</span> Data Sources
+    </div>
+    <ul class="step-list">
+      <li class="step-item"><span class="step-num" style="color:var(--green)">→</span> Amazon.in (all brands)</li>
+      <li class="step-item"><span class="step-num" style="color:var(--green)">→</span> ASUS India official store</li>
+      <li class="step-item"><span class="step-num" style="color:var(--green)">→</span> HP India official store</li>
+      <li class="step-item"><span class="step-num" style="color:var(--green)">→</span> Dell India official store</li>
+      <li class="step-item"><span class="step-num" style="color:var(--green)">→</span> Lenovo India official store</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══════════ MODAL ══════════ -->
+<div class="modal-overlay" id="detail-modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-name">—</div>
+    <div class="modal-brand-series" id="modal-meta">—</div>
+    <div class="modal-price-big" id="modal-price">—</div>
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Price</th>
+          <th>Change</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody id="modal-history"></tbody>
+    </table>
+    <button class="close-modal" onclick="closeModalDirect()">Close</button>
+  </div>
+</div>
+
+<script>
+// ─── DATA (will be replaced by scraper output) ───────────────────
+// The GitHub Actions workflow writes prices to data/prices.json
+// and this dashboard reads it. For now we show sample structure.
+
+const BRAND_COLORS = {
+  ASUS: '#00b4d8',
+  HP: '#0096ff',
+  Dell: '#007ce0',
+  Lenovo: '#e8512a'
+};
+
+const SERIES_MAP = {
+  ASUS: ['TUF Gaming', 'ROG Strix', 'ROG Zephyrus'],
+  HP: ['Victus', 'Omen'],
+  Dell: ['G15', 'G16', 'Alienware m16', 'Alienware x14'],
+  Lenovo: ['LOQ', 'Legion 5', 'Legion 5 Pro', 'Legion 7']
+};
+
+// Load real data from data/prices.json (generated by GitHub Actions)
+let laptopData = [];
+
+async function loadData() {
+  try {
+    const res = await fetch('data/prices.json?t=' + Date.now());
+    if (!res.ok) throw new Error('not found');
+    const json = await res.json();
+    laptopData = json.laptops || [];
+    document.getElementById('last-updated').textContent =
+      json.updated ? 'UPDATED ' + new Date(json.updated).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}) : 'LIVE';
+    renderStats();
+    renderCards('ALL');
+  } catch (e) {
+    // No data file yet — show empty state
+    document.getElementById('empty-prices').style.display = 'block';
+    document.getElementById('cards-container').style.display = 'none';
+    document.getElementById('card-count').textContent = '0';
+  }
+}
+
+function renderStats() {
+  document.getElementById('stat-tracked').textContent = laptopData.length || '—';
+  const drops = laptopData.filter(l => l.drop_pct && l.drop_pct > 0).length;
+  document.getElementById('stat-drops').textContent = drops || '—';
+}
+
+function formatINR(n) {
+  return '₹' + Number(n).toLocaleString('en-IN');
+}
+
+function makeSpark(history) {
+  if (!history || history.length < 2) {
+    return `<svg viewBox="0 0 80 36"><line x1="0" y1="18" x2="80" y2="18" stroke="rgba(255,255,255,.1)" stroke-width="1"/></svg>`;
+  }
+  const prices = history.map(h => h.price);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+  const pts = prices.map((p, i) => {
+    const x = (i / (prices.length - 1)) * 76 + 2;
+    const y = 32 - ((p - min) / range) * 28;
+    return `${x},${y}`;
+  }).join(' ');
+  const last = prices[prices.length - 1];
+  const first = prices[0];
+  const color = last <= first ? '#00ff88' : '#ff2d55';
+  return `<svg viewBox="0 0 80 36"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+}
+
+function renderCards(brand) {
+  const container = document.getElementById('cards-container');
+  const empty = document.getElementById('empty-prices');
+  const filtered = brand === 'ALL' ? laptopData : laptopData.filter(l => l.brand === brand);
+
+  if (filtered.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('card-count').textContent = '0';
+    return;
+  }
+
+  empty.style.display = 'none';
+  container.style.display = 'grid';
+  document.getElementById('card-count').textContent = filtered.length;
+
+  container.innerHTML = filtered.map((l, i) => {
+    const color = BRAND_COLORS[l.brand] || '#00e5ff';
+    const isDeal = l.drop_pct && l.drop_pct >= 5;
+    const spark = makeSpark(l.history);
+    const wasHtml = l.was_price
+      ? `<div class="price-was">${formatINR(l.was_price)}</div>` : '';
+    const dropHtml = l.drop_pct
+      ? `<div class="price-drop">▼ ${l.drop_pct.toFixed(1)}% drop</div>` : '';
+    const dealBadge = isDeal ? `<span class="deal-badge">DEAL</span>` : '';
+    const specs = (l.specs || []).map(s => `<span class="spec-chip">${s}</span>`).join('');
+    const sourceClass = l.source && l.source.includes('amazon') ? 'amazon' : 'official';
+
+    return `<div class="laptop-card ${isDeal ? 'deal' : ''}"
+        style="--brand-color:${color}; animation-delay:${i * 0.05}s"
+        onclick="openModal(${i})">
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="card-brand-row">
+            <span class="brand-badge" style="background:${color}">${l.brand}</span>
+            <span class="series-tag">${l.series || ''}</span>
+          </div>
+          ${dealBadge}
+        </div>
+        <div class="card-name">${l.name}</div>
+        <div class="spec-chips">${specs}</div>
+        <div class="card-price-row">
+          <div class="price-block">
+            <div class="price-current">${formatINR(l.price)}</div>
+            ${wasHtml}${dropHtml}
+          </div>
+          <div class="sparkline-wrap">${spark}</div>
+        </div>
+        <div class="card-footer">
+          <a class="source-link" href="${l.url || '#'}" target="_blank" onclick="event.stopPropagation()">
+            <span class="source-dot ${sourceClass}"></span>
+            ${l.source_label || l.source || 'View'}
+          </a>
+          <span class="last-seen">${l.last_seen || 'Just now'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── MODALS ────────────────────────────────────────────────
+function openModal(idx) {
+  const l = laptopData[idx];
+  if (!l) return;
+  document.getElementById('modal-name').textContent = l.name;
+  document.getElementById('modal-meta').textContent = `${l.brand} · ${l.series || ''} · ${l.source_label || l.source || ''}`;
+  document.getElementById('modal-price').textContent = formatINR(l.price);
+
+  const hist = (l.history || []).slice(-7).reverse();
+  document.getElementById('modal-history').innerHTML = hist.map((h, i) => {
+    const prev = hist[i + 1];
+    const change = prev ? h.price - prev.price : 0;
+    const cls = change < 0 ? 'drop' : change > 0 ? 'rise' : '';
+    const arrow = change < 0 ? '▼' : change > 0 ? '▲' : '—';
+    return `<tr>
+      <td>${h.date}</td>
+      <td>${formatINR(h.price)}</td>
+      <td class="${cls}">${change !== 0 ? arrow + ' ' + formatINR(Math.abs(change)) : '—'}</td>
+      <td>${h.source || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('detail-modal'))
+    document.getElementById('detail-modal').classList.remove('open');
+}
+
+function closeModalDirect() {
+  document.getElementById('detail-modal').classList.remove('open');
+}
+
+// ─── TABS ────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const tabs = ['prices','deals','alerts','setup'];
+  document.querySelectorAll('.main-tab')[tabs.indexOf(name)].classList.add('active');
+}
+
+// ─── BRAND FILTER ─────────────────────────────────────────
+function filterBrand(el) {
+  document.querySelectorAll('.brand-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCards(el.dataset.brand);
+}
+
+// ─── ALERTS ──────────────────────────────────────────────
+function showAddAlert() {
+  alert('To add custom alerts, set PRICE_THRESHOLD in your GitHub Secrets and update the notifier.py config.');
+}
+
+// ─── INIT ────────────────────────────────────────────────
+loadData();
+// Refresh every 10 minutes
+setInterval(loadData, 10 * 60 * 1000);
+</script>
+</body>
+</html>
