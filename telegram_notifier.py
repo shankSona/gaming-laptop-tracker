@@ -1,100 +1,84 @@
-import os
+# notifications/telegram_notifier.py
+
 import requests
+import json
+
+PRICE_THRESHOLDS = [150000, 100000, 90000]  # ₹1.5L, ₹1L, ₹90K
 
 class TelegramNotifier:
-    def __init__(self):
-        self.token   = os.environ["TELEGRAM_BOT_TOKEN"]
-        self.chat_id = os.environ["TELEGRAM_CHAT_ID"]
+    def __init__(self, bot_token: str, chat_id: str):
+        self.bot_token = bot_token
+        self.chat_id = chat_id
+        self.base_url = f"https://api.telegram.org/bot{bot_token}"
 
-    def _send(self, text: str):
-        url = f"https://api.telegram.org/bot{self.token}/sendMessage"
-        requests.post(url, json={
-            "chat_id":                  self.chat_id,
-            "text":                     text,
-            "parse_mode":               "HTML",
-            "disable_web_page_preview": True,
-        })
+    def send_message(self, text: str):
+        url = f"{self.base_url}/sendMessage"
+        payload = {
+            "chat_id": self.chat_id,
+            "text": text,
+            "parse_mode": "HTML"
+        }
+        response = requests.post(url, json=payload)
+        return response.json()
 
-    def _top3_block(self, top3: list) -> str:
-        """Formats the top 3 cheapest qualifying laptops block."""
-        if not top3:
-            return "\n\n📊 <b>Top 3 Best Value Right Now</b>\nNo qualifying laptops found yet."
+    def check_threshold_alerts(self, laptop: dict, current_price: float):
+        """
+        Fire an alert when a laptop's price crosses below
+        any of the defined thresholds (₹1.5L, ₹1L, ₹90K).
+        """
+        alerts = []
+        for threshold in PRICE_THRESHOLDS:
+            if current_price <= threshold:
+                label = self._format_price(threshold)
+                alerts.append((threshold, label))
 
-        lines = ["\n\n📊 <b>Top 3 Cheapest With Best Config Right Now</b>"]
-        medals = ["🥇", "🥈", "🥉"]
-        for i, lp in enumerate(top3):
-            office_str  = f" | 💼 {lp['office']}" if lp['office'] not in ("None","Unknown") else ""
-            upgrade_str = " | 🔧 Upgradable" if lp['upgradable'] else ""
-            lines.append(
-                f"\n{medals[i]} <b>{lp['name']}</b>\n"
-                f"   💰 <b>₹{lp['price']:,.0f}</b> on {lp['vendor']}\n"
-                f"   🖥 {lp['cpu']}\n"
-                f"   🎮 {lp['gpu']}\n"
-                f"   💾 {lp['ram']} | 📀 {lp['storage']}\n"
-                f"   🪟 {lp['windows']}{office_str}{upgrade_str}\n"
-                f"   ⭐ Score: {lp['score']}/100\n"
-                f"   🔗 {lp['url']}"
-            )
-        return "\n".join(lines)
-
-    def send_price_drops(self, drops: list, top3: list):
-        if not drops:
+        if not alerts:
             return
-        lines = [f"🔥 <b>Price Drop Alert! ({len(drops)} laptop{'s' if len(drops)>1 else ''})</b>\n"]
-        for d in drops:
-            qual = " ✅ Meets your spec" if d.get("qualifies") else " ⚠️ Below your min spec"
-            lines.append(
-                f"💸 <b>{d['name']}</b>{qual}\n"
-                f"   ₹{d['old_price']:,.0f} → <b>₹{d['new_price']:,.0f}</b>  "
-                f"(▼ ₹{d['change_inr']:,.0f} / {d['change_pct']}% off)\n"
-                f"   🖥 {d['cpu']} | 🎮 {d['gpu']}\n"
-                f"   💾 {d['ram']} | 📀 {d['storage']}\n"
-                f"   🪟 {d['windows']} | 💼 Office: {d['office']}\n"
-                f"   📌 {d['vendor']}\n"
-                f"   🔗 {d['url']}\n"
-            )
-        self._send("\n".join(lines) + self._top3_block(top3))
 
-    def send_price_rises(self, rises: list, top3: list):
-        if not rises:
-            return
-        lines = [f"📈 <b>Price Increase Alert! ({len(rises)} laptop{'s' if len(rises)>1 else ''})</b>\n"]
-        for r in rises:
-            lines.append(
-                f"📈 <b>{r['name']}</b>\n"
-                f"   ₹{r['old_price']:,.0f} → <b>₹{r['new_price']:,.0f}</b>  "
-                f"(▲ ₹{r['change_inr']:,.0f} / {r['change_pct']}% rise)\n"
-                f"   📌 {r['vendor']}\n"
-                f"   🔗 {r['url']}\n"
-            )
-        self._send("\n".join(lines) + self._top3_block(top3))
+        # Alert for the lowest threshold crossed
+        lowest_threshold, label = min(alerts, key=lambda x: x[0])
 
-    def send_new_laptops(self, new_laptops: list, top3: list):
-        if not new_laptops:
-            return
-        lines = [f"🆕 <b>New Laptop{'s' if len(new_laptops)>1 else ''} Detected!</b>\n"]
-        for lp in new_laptops:
-            lines.append(
-                f"✨ <b>{lp['name']}</b>\n"
-                f"   Brand: {lp['brand']} | ₹{lp['price']:,.0f}\n"
-                f"   📌 {lp['vendor']}\n"
-                f"   🔗 {lp['url']}\n"
-            )
-        self._send("\n".join(lines) + self._top3_block(top3))
-
-    def send_back_in_stock(self, laptop: dict, top3: list):
-        msg = (
-            f"✅ <b>Back in Stock!</b>\n\n"
-            f"<b>{laptop['name']}</b>\n"
-            f"₹{laptop['price']:,.0f} on {laptop['vendor']}\n"
-            f"🔗 {laptop['url']}"
+        message = (
+            f"🚨 <b>Price Alert — Under {label}!</b>\n\n"
+            f"💻 <b>{laptop['brand']} {laptop['series']}</b>\n"
+            f"📋 {laptop.get('model_name', 'N/A')}\n"
+            f"💰 Current Price: <b>{self._format_price(current_price)}</b>\n"
+            f"🏷️ Threshold Crossed: {label}\n"
+            f"🔗 {laptop.get('url', '')}"
         )
-        self._send(msg + self._top3_block(top3))
+        self.send_message(message)
 
-    def send_hourly_digest(self, top3: list):
-        """
-        Optional: send top 3 every morning at 9am
-        even if no price changes occurred.
-        """
-        msg = "☀️ <b>Good Morning! Daily Best Value Picks</b>"
-        self._send(msg + self._top3_block(top3))
+    def check_price_drop(self, laptop: dict, old_price: float, new_price: float):
+        """Alert on any price drop (existing logic)."""
+        if new_price >= old_price:
+            return
+
+        drop_amount = old_price - new_price
+        drop_pct = (drop_amount / old_price) * 100
+
+        message = (
+            f"📉 <b>Price Drop!</b>\n\n"
+            f"💻 <b>{laptop['brand']} {laptop['series']}</b>\n"
+            f"📋 {laptop.get('model_name', 'N/A')}\n"
+            f"💰 {self._format_price(old_price)} → <b>{self._format_price(new_price)}</b>\n"
+            f"📊 Drop: ₹{drop_amount:,.0f} ({drop_pct:.1f}% off)\n"
+            f"🔗 {laptop.get('url', '')}"
+        )
+        self.send_message(message)
+
+    def check_back_in_stock(self, laptop: dict, price: float):
+        """Alert when a previously out-of-stock laptop is available."""
+        message = (
+            f"✅ <b>Back in Stock!</b>\n\n"
+            f"💻 <b>{laptop['brand']} {laptop['series']}</b>\n"
+            f"📋 {laptop.get('model_name', 'N/A')}\n"
+            f"💰 Price: <b>{self._format_price(price)}</b>\n"
+            f"🔗 {laptop.get('url', '')}"
+        )
+        self.send_message(message)
+
+    @staticmethod
+    def _format_price(price: float) -> str:
+        if price >= 100000:
+            return f"₹{price/100000:.1f}L"
+        return f"₹{price/1000:.0f}K"
