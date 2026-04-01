@@ -1,6 +1,16 @@
 import os
 import requests
 
+# ── PRICE THRESHOLD ALERTS ───────────────────────────────────
+# Alert fires when ANY laptop's price drops AT or BELOW these levels.
+# Checks all laptops regardless of brand/series.
+PRICE_THRESHOLDS = [
+    (150000, "₹1.5L"),
+    (100000, "₹1L"),
+    (90000,  "₹90K"),
+]
+
+
 class TelegramNotifier:
     def __init__(self):
         self.token   = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -8,22 +18,57 @@ class TelegramNotifier:
 
     def _send(self, text: str):
         url = f"https://api.telegram.org/bot{self.token}/sendMessage"
-        requests.post(url, json={
-            "chat_id":                  self.chat_id,
-            "text":                     text,
-            "parse_mode":               "HTML",
-            "disable_web_page_preview": True,
-        })
+        try:
+            requests.post(url, json={
+                "chat_id":                  self.chat_id,
+                "text":                     text,
+                "parse_mode":               "HTML",
+                "disable_web_page_preview": True,
+            }, timeout=15)
+        except Exception as e:
+            print(f"Telegram send error: {e}")
+
+    # ── THRESHOLD ALERTS ─────────────────────────────────────
+
+    def check_threshold_alerts(self, laptops_with_prices: list):
+        """
+        Call once per run with ALL scraped laptops.
+        Fires a Telegram alert for each laptop whose price is
+        at or below any of the defined thresholds.
+
+        laptops_with_prices: list of dicts with keys:
+          name, brand, series, price_inr, vendor_name, source_url
+        """
+        for lp in laptops_with_prices:
+            price = lp.get("price_inr", 0)
+            crossed = [label for amount, label in PRICE_THRESHOLDS if price <= amount]
+            if not crossed:
+                continue
+
+            # Report the most restrictive (lowest) threshold crossed
+            best_label = crossed[-1]  # last = lowest threshold
+
+            msg = (
+                f"🚨 <b>Price Alert — Under {best_label}!</b>\n\n"
+                f"💻 <b>{lp['brand']} {lp['series']}</b>\n"
+                f"📋 {lp['name']}\n"
+                f"💰 Current Price: <b>₹{price:,.0f}</b>\n"
+                f"🏷️ Thresholds crossed: {', '.join(crossed)}\n"
+                f"🏪 {lp.get('vendor_name', '')}\n"
+                f"🔗 {lp.get('source_url', '')}"
+            )
+            self._send(msg)
+
+    # ── EXISTING NOTIFICATION METHODS ────────────────────────
 
     def _top3_block(self, top3: list) -> str:
-        """Formats the top 3 cheapest qualifying laptops block."""
         if not top3:
             return "\n\n📊 <b>Top 3 Best Value Right Now</b>\nNo qualifying laptops found yet."
 
         lines = ["\n\n📊 <b>Top 3 Cheapest With Best Config Right Now</b>"]
         medals = ["🥇", "🥈", "🥉"]
         for i, lp in enumerate(top3):
-            office_str  = f" | 💼 {lp['office']}" if lp['office'] not in ("None","Unknown") else ""
+            office_str  = f" | 💼 {lp['office']}" if lp['office'] not in ("None", "Unknown") else ""
             upgrade_str = " | 🔧 Upgradable" if lp['upgradable'] else ""
             lines.append(
                 f"\n{medals[i]} <b>{lp['name']}</b>\n"
@@ -92,9 +137,5 @@ class TelegramNotifier:
         self._send(msg + self._top3_block(top3))
 
     def send_hourly_digest(self, top3: list):
-        """
-        Optional: send top 3 every morning at 9am
-        even if no price changes occurred.
-        """
         msg = "☀️ <b>Good Morning! Daily Best Value Picks</b>"
         self._send(msg + self._top3_block(top3))
